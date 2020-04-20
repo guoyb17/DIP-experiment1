@@ -11,4 +11,4 @@ The program requires python 3. Besides, use `pip3 instsall -r requirements.txt` 
 Most params are clear, and some further explainations are as follow:
 
 1. `-t --times`: the program uses Gauss-Seidel method to solve Ax = b. This param sets iteration times.
-2. `-h --height` and `-w --width`: seperately sets the alignment of masked input image. Height is where pixels of the masked input with lowest row goes. Width similarly.
+2. `-h --height` and `-w --width`: position of mask picture's (0, 0) in background. Accept negative integer(s). You MUST make sure that masked area is totally legal in background with given position.

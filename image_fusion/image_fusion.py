@@ -17,14 +17,13 @@ def gradient_cal(src, iter_x, iter_y, max_width, max_height):
     down_part = src[iter_x][max_width - 1 if iter_y == max_width - 1 else iter_y + 1]
     return 4 * src[iter_x][iter_y] - left_part - right_part - up_part - down_part
 
-def update(src, cover, max_width, max_height):
+def update(src, cover):
     '''
     Update src with cover info.
     src: input numpy array
     cover: Compressed Sparse Row (CSR) sparse matrix, LIST [[<row offsets>], [<column indices>], [values]]
-    max_width, max_height: width and height of src
     '''
-    for iter_r in range(max_height):
+    for iter_r in range(len(cover[0]) - 1):
         for iter_c in range(cover[0][iter_r], cover[0][iter_r + 1]):
             src[iter_r][cover[1][iter_c]] = cover[2][iter_c]
     return src
@@ -79,8 +78,8 @@ def at_boundary(mask_map, r, c):
     '''
     Check whether (iter_r, iter_c) pixel within mask.
     '''
-    return in_mask(mask_map, r, c) and\
-        not (in_mask(mask_map, r - 1, c) and in_mask(mask_map, r + 1, c)\
+    # return in_mask(mask_map, r, c) and ...
+    return not (in_mask(mask_map, r - 1, c) and in_mask(mask_map, r + 1, c)\
             and in_mask(mask_map, r, c - 1) and in_mask(mask_map, r, c + 1))
 
 def main(ipt_img, opt_img, mask_img, background, times, align_height, align_width):
@@ -92,8 +91,69 @@ def main(ipt_img, opt_img, mask_img, background, times, align_height, align_widt
     bg_bitmap = np.array(bg_src)
     mask_src = image.open(mask_img).convert("1")
     mask_width, mask_height = mask_src.size
+    assert(ipt_width == mask_width)
+    assert(ipt_height == mask_height)
     mask_bitmap = np.array(mask_src)
     mask_csr = get_mask(mask_bitmap, mask_width, mask_height)
+    total_n = mask_csr[0][-1]
+    cnt = 0
+    A = [[0], [], []]
+    A_buff = {} # iter_r * mask_width + mask_csr[1][iter_c]: (cnt, type), type = True for boundary, False for ordinary
+    x0 = []
+    b = []
+    for iter_r in range(len(mask_csr[0]) - 1):
+        for iter_c in range(mask_csr[0][iter_r], mask_csr[0][iter_r + 1]):
+            # Target: (iter_r, mask_csr[1][iter_c])
+            c = mask_csr[1][iter_c]
+            A_buff[iter_r * mask_width + c] = (cnt, at_boundary(mask_csr, iter_r, c))
+            cnt += 1
+    assert(cnt == total_n)
+    cnt = 0
+    for iter_i in A_buff.keys():
+        iter_r = iter_i // mask_width
+        iter_c = iter_i % mask_width
+        if A_buff[iter_i][1]:
+            # boundary
+            A[1].append(cnt)
+            A[2].append(1)
+            b.append(bg_bitmap[iter_r + align_height][iter_c + align_width])
+        else:
+            # ordinary
+            A[1].append(cnt)
+            A[2].append(4)
+            A[1].append(A_buff[(iter_r - 1) * mask_width + iter_c][0])
+            A[2].append(-1)
+            A[1].append(A_buff[(iter_r + 1) * mask_width + iter_c][0])
+            A[2].append(-1)
+            A[1].append(A_buff[iter_r * mask_width + iter_c - 1][0])
+            A[2].append(-1)
+            A[1].append(A_buff[iter_r * mask_width + iter_c + 1][0])
+            A[2].append(-1)
+            b.append(gradient_cal(ipt_bitmap, iter_r, iter_c, ipt_width, ipt_height))
+        A[0].append(len(A[1]))
+        x0.append(ipt_bitmap[iter_r][iter_c])
+        cnt += 1
+    assert(cnt == total_n)
+    x = gauss_seidel(A, x0, b, times)
+    cover = [[], [], []]
+    cnt = 0
+    current_iter_r = -1
+    for iter_i in A_buff.keys():
+        iter_r = (iter_i // mask_width) + align_height
+        if current_iter_r != iter_r:
+            for _ in range(iter_r - current_iter_r):
+                cover[0].append(len(cover[1]))
+            current_iter_r = iter_r
+        iter_c = iter_i % mask_width + align_width
+        cover[1].append(iter_c)
+        cover[2].append(x[cnt])
+        cnt += 1
+    assert(cnt == total_n)
+    for _ in range(ipt_height - current_iter_r):
+        cover[0].append(len(cover[1]))
+    ans_bitmap = update(bg_bitmap, cover)
+    dst = image.fromarray(np.uint8(ans_bitmap))
+    dst.save(opt_img)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
