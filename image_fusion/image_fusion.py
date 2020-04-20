@@ -25,6 +25,18 @@ def update(src, cover):
     '''
     for iter_r in range(len(cover[0]) - 1):
         for iter_c in range(cover[0][iter_r], cover[0][iter_r + 1]):
+            if cover[2][iter_c][0] < 0:
+                cover[2][iter_c][0] = 0
+            elif cover[2][iter_c][0] > 255:
+                cover[2][iter_c][0] = 255
+            if cover[2][iter_c][1] < 0:
+                cover[2][iter_c][1] = 0
+            elif cover[2][iter_c][1] > 255:
+                cover[2][iter_c][1] = 255
+            if cover[2][iter_c][2] < 0:
+                cover[2][iter_c][2] = 0
+            elif cover[2][iter_c][2] > 255:
+                cover[2][iter_c][2] = 255
             src[iter_r][cover[1][iter_c]] = cover[2][iter_c]
     return src
 
@@ -36,10 +48,9 @@ def gauss_seidel(A, x0, b, n):
     b: use the SAME shape of x0
     n: iteration times
     '''
-    len_x = len(x0) # A should be len_x * len_x size; NO check here!
     x = x0
     for _ in range(n):
-        for iter_i in range(len_x):
+        for iter_i in range(len(x0)): # A should be len_x * len_x size; NO check here!
             sum_ax = np.zeros(3)
             the_iter_c = -1
             for iter_c in range(A[0][iter_i], A[0][iter_i + 1]):
@@ -47,7 +58,7 @@ def gauss_seidel(A, x0, b, n):
                 if c != iter_i:
                     sum_ax += A[2][iter_c] * x[c]
                 else:
-                    the_iter_c = c
+                    the_iter_c = iter_c
             assert(the_iter_c != -1)
             x[iter_i] = (b[iter_i] - sum_ax) / A[2][the_iter_c]
     return x
