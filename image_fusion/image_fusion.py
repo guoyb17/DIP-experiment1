@@ -40,15 +40,16 @@ def gauss_seidel(A, x0, b, n):
     x = x0
     for _ in range(n):
         for iter_i in range(len_x):
-            sum_a = np.zeros(3)
+            sum_ax = np.zeros(3)
             the_iter_c = -1
             for iter_c in range(A[0][iter_i], A[0][iter_i + 1]):
-                if iter_c != iter_i:
-                    sum_a += A[2][iter_c]
+                c = A[1][iter_c]
+                if c != iter_i:
+                    sum_ax += A[2][iter_c] * x[c]
                 else:
-                    the_iter_c = iter_c
+                    the_iter_c = c
             assert(the_iter_c != -1)
-            x[iter_i] = (b[iter_i] - sum_a * x[iter_i]) / A[2][the_iter_c]
+            x[iter_i] = (b[iter_i] - sum_ax) / A[2][the_iter_c]
     return x
 
 def get_mask(mask_map, mask_width, mask_height):
@@ -58,7 +59,7 @@ def get_mask(mask_map, mask_width, mask_height):
     ans = [[0], []] # Simplified CSR! No data part!
     for iter_r in range(mask_height):
         for iter_c in range(mask_width):
-            if mask_map[iter_r][iter_c] != 0:
+            if mask_map[iter_r][iter_c] != False:
                 ans[1].append(iter_c)
         ans[0].append(len(ans[1]))
     return ans
@@ -85,10 +86,10 @@ def at_boundary(mask_map, r, c):
 def main(ipt_img, opt_img, mask_img, background, times, align_height, align_width):
     ipt_src = image.open(ipt_img).convert("RGB")
     ipt_width, ipt_height = ipt_src.size
-    ipt_bitmap = np.array(ipt_src)
+    ipt_bitmap = np.array(ipt_src).astype(np.int)
     bg_src = image.open(background).convert("RGB")
     bg_width, bg_height = bg_src.size
-    bg_bitmap = np.array(bg_src)
+    bg_bitmap = np.array(bg_src).astype(np.int)
     mask_src = image.open(mask_img).convert("1")
     mask_width, mask_height = mask_src.size
     assert(ipt_width == mask_width)
@@ -179,11 +180,11 @@ if __name__ == "__main__":
                         help="iteration times",
                         required=True
                         )
-    parser.add_argument("-h", "--height", type=int,
+    parser.add_argument("-y", "--height", type=int,
                         help="input align height on background",
                         required=True
                         )
-    parser.add_argument("-w", "--width", type=int,
+    parser.add_argument("-x", "--width", type=int,
                         help="input align width on background",
                         required=True
                         )
