@@ -141,18 +141,18 @@ def main(iptfrom, iptto, prefix, num):
                         full_vec[1][0] = to_width - 1
                         opt_bitmap[to_vec[0][0]][to_vec[1][0]] = (1 - alpha) * from_bitmap[iter_x][iter_y] + alpha * to_bitmap[full_vec[0][0]][full_vec[1][0]]
         dst = image.fromarray(np.uint8(opt_bitmap))
-        dst.save(prefix + "_" + str(iter_n) + ".png")
+        dst.save(prefix + "_" + str(num) + "_" + str(iter_n) + ".png")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="A script to do image fusion on given pictures."
         )
     parser.add_argument("-f", "--iptfrom", type=str,
-                        help="input file, from: 0% merge",
+                        help="input file, from: 0%% merge",
                         required=True
                         )
     parser.add_argument("-t", "--iptto", type=str,
-                        help="input file, to: 100% merge",
+                        help="input file, to: 100%% merge",
                         required=True
                         )
     parser.add_argument("-p", "--prefix", type=str,

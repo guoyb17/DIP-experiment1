@@ -1,3 +1,4 @@
+from copy import deepcopy
 from math import acos, sqrt, pi
 import numpy as np
 
@@ -73,7 +74,7 @@ def get_convex_hull(sub_set, is_cw=True):
     '''
     Get convex hull of sub_set.
     '''
-    start = sub_set["points"][0][0 if is_cw else -1]
+    start = sub_set["points"][0 if is_cw else -1][0]
     next_point = start
     ans = []
     ans.append(start)
@@ -93,7 +94,7 @@ def test_convex_hull(sub_set, is_cw=False):
     '''
     Simple test of get_convex_hull, cw, and ccw.
     '''
-    start = sub_set["points"][0][0 if is_cw else -1]
+    start = sub_set["points"][0 if is_cw else -1][0]
     next_point = start
     ans = []
     ans.append(start)
@@ -148,10 +149,10 @@ def zig_zag(left_set, right_set):
     iter_l = 0
     iter_r = 0
     while True:
-        if get_degree(left_set["point_set"][L], right_set["point_set"][R], right_set["point_set"][right_convex_hull[iter_r + 1]])[1] == 1:
+        if (iter_r < len(right_convex_hull) - 1) and (get_degree(left_set["point_set"][L], right_set["point_set"][R], right_set["point_set"][right_convex_hull[iter_r + 1]])[1] == 1):
             iter_r += 1
             R = right_convex_hull[iter_r]
-        elif get_degree(left_set["point_set"][L], right_set["point_set"][R], left_set["point_set"][left_convex_hull[iter_l + 1]])[1] == 1:
+        elif (iter_l < len(left_convex_hull) - 1) and (get_degree(left_set["point_set"][L], right_set["point_set"][R], left_set["point_set"][left_convex_hull[iter_l + 1]])[1] == 1):
             iter_l += 1
             L = left_convex_hull[iter_l]
         else:
@@ -199,10 +200,14 @@ def merge_ans(left_ans, right_ans):
     }
     '''
     boundary = zig_zag(left_ans, right_ans)
+    edges = deepcopy(left_ans["edges"])
+    edges.update(right_ans["edges"])
+    point_set = deepcopy(left_ans["point_set"])
+    point_set.update(right_ans["point_set"])
     ans = {
-        "edges": dict(left_ans["edges"].items() + right_ans["edges"].items()),
+        "edges": edges,
         "points": left_ans["points"] + right_ans["points"],
-        "point_set": dict(left_ans["point_set"].items() + right_ans["point_set"].items())
+        "point_set": point_set
     }
     L = boundary["bottom"][0]
     R = boundary["bottom"][1]
@@ -225,13 +230,13 @@ def merge_ans(left_ans, right_ans):
         right_candidates = dict(sorted(right_candidates.items(), key=lambda item: item[1]))
         iter_l = 0
         selected_l = ""
+        left_list = list(left_candidates.keys())
         while True:
-            tmp_left = left_candidates.keys()[iter_l]
-            tmp_next = left_candidates.keys()[iter_l + 1]
+            tmp_left = left_list[iter_l]
             if left_candidates[tmp_left] < 0:
                 break
             else:
-                if in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][tmp_left], ans["point_set"][tmp_next]):
+                if (iter_l < len(left_list) - 1) and in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][tmp_left], ans["point_set"][left_list[iter_l + 1]]):
                     iter_l += 1
                     ans["edges"][L].remove(tmp_left)
                     ans["edges"][tmp_left].remove(L)
@@ -240,14 +245,14 @@ def merge_ans(left_ans, right_ans):
                     break
         iter_r = 0
         selected_r = ""
+        right_list = list(right_candidates.keys())
         while True:
-            tmp_right = right_candidates.keys()[iter_l]
-            tmp_next = right_candidates.keys()[iter_l + 1]
+            tmp_right = right_list[iter_r]
             if right_candidates[tmp_right] < 0:
                 break
             else:
-                if in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][tmp_right], ans["point_set"][tmp_next]):
-                    iter_l += 1
+                if (iter_r < len(right_list) - 1) and in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][tmp_right], ans["point_set"][right_list[iter_r + 1]]):
+                    iter_r += 1
                     ans["edges"][R].remove(tmp_right)
                     ans["edges"][tmp_right].remove(R)
                 else:
@@ -348,18 +353,18 @@ def triangulate(subset):
             if check_case[0] == pi:
                 ans["edges"][subset[0][0]].append(subset[1][0])
                 ans["edges"][subset[1][0]].append(subset[0][0])
-                ans["edges"][subset[1][0]].append(subset[2][0])
-                ans["edges"][subset[2][0]].append(subset[1][0])
-            elif get_degree(ans["point_set"][subset[1][0]], ans["point_set"][subset[2][0]], ans["point_set"][subset[0][0]])[0] == pi:
                 ans["edges"][subset[0][0]].append(subset[2][0])
                 ans["edges"][subset[2][0]].append(subset[0][0])
+            elif get_degree(ans["point_set"][subset[1][0]], ans["point_set"][subset[2][0]], ans["point_set"][subset[0][0]])[0] == pi:
+                ans["edges"][subset[0][0]].append(subset[1][0])
+                ans["edges"][subset[1][0]].append(subset[0][0])
                 ans["edges"][subset[1][0]].append(subset[2][0])
                 ans["edges"][subset[2][0]].append(subset[1][0])
             else:
-                ans["edges"][subset[0][0]].append(subset[1][0])
                 ans["edges"][subset[0][0]].append(subset[2][0])
-                ans["edges"][subset[1][0]].append(subset[0][0])
                 ans["edges"][subset[2][0]].append(subset[0][0])
+                ans["edges"][subset[1][0]].append(subset[2][0])
+                ans["edges"][subset[2][0]].append(subset[1][0])
         else:
             ans["edges"][subset[0][0]].append(subset[1][0])
             ans["edges"][subset[0][0]].append(subset[2][0])

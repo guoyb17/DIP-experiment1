@@ -1,3 +1,4 @@
 env/
 API_SECRET
 __pycache__/
+result*
