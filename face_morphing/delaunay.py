@@ -3,6 +3,8 @@ from math import acos, sqrt, pi
 import numpy as np
 import time
 
+from graham_scan import graham_scan
+
 
 def x_y_sort(point_set):
     '''
@@ -171,7 +173,10 @@ def zig_zag(left_set, right_set):
     R = right_convex_hull[0]
     iter_l = 0
     iter_r = 0
+    output_result = False
     while True:
+        if not output_result and (L == "global_mid_down" or R == "global_mid_down"):
+            output_result = True
         if get_degree(left_set["point_set"][L], right_set["point_set"][R], right_set["point_set"][right_convex_hull[iter_r - 1]])[1] == -1:
             iter_r -= 1
             R = right_convex_hull[iter_r]
@@ -181,6 +186,10 @@ def zig_zag(left_set, right_set):
         else:
             break
     ans["bottom"] = (L, R)
+    if output_result:
+        print(left_set, right_set)
+        print(ans)
+        time.sleep(1)
     return ans
 
 def merge_ans(left_ans, right_ans):
