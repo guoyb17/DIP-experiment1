@@ -117,7 +117,18 @@ def in_circle(A, B, C, D):
     '''
     Judge whether D is within Circle ABC.
     '''
-    pass
+    sign = np.array([
+        [A["x"], A["y"], A["x"] * A["x"] + A["y"] * A["y"]],
+        [B["x"], B["y"], B["x"] * B["x"] + B["y"] * B["y"]],
+        [C["x"], C["y"], C["x"] * C["x"] + C["y"] * C["y"]]
+    ])
+    ret = np.array([
+        [A["x"], A["y"], A["x"] * A["x"] + A["y"] * A["y"], 1],
+        [B["x"], B["y"], B["x"] * B["x"] + B["y"] * B["y"], 1],
+        [C["x"], C["y"], C["x"] * C["x"] + C["y"] * C["y"], 1],
+        [D["x"], D["y"], D["x"] * D["x"] + D["y"] * D["y"], 1]
+    ])
+    return np.linalg.det(ret) * np.linalg.det(sign) < 0
 
 def zig_zag(left_set, right_set):
     '''
@@ -200,10 +211,75 @@ def merge_ans(left_ans, right_ans):
     while L != boundary["top"][0] and R != boundary["top"][1]:
         left_candidates = {}
         for candidate in left_ans["edges"][L]:
-            (tmp, sign) = get_degree(left_ans["point_set"][L], right_ans["point_set"][R], left_ans["point_set"][candidate])
+            (tmp, sign) = get_degree(ans["point_set"][L], ans["point_set"][R], ans["point_set"][candidate])
             if sign == -1: # should not happen
                 tmp = -tmp
             left_candidates[candidate] = tmp
+        left_candidates = dict(sorted(left_candidates.items(), key=lambda item: item[1]))
+        right_candidates = {}
+        for candidate in right_ans["edges"][R]:
+            (tmp, sign) = get_degree(ans["point_set"][R], ans["point_set"][candidate], ans["point_set"][L])
+            if sign == -1: # should not happen
+                tmp = -tmp
+            right_candidates[candidate] = tmp
+        right_candidates = dict(sorted(right_candidates.items(), key=lambda item: item[1]))
+        iter_l = 0
+        selected_l = ""
+        while True:
+            tmp_left = left_candidates.keys()[iter_l]
+            tmp_next = left_candidates.keys()[iter_l + 1]
+            if left_candidates[tmp_left] < 0:
+                break
+            else:
+                if in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][tmp_left], ans["point_set"][tmp_next]):
+                    iter_l += 1
+                    ans["edges"][L].remove(tmp_left)
+                    ans["edges"][tmp_left].remove(L)
+                else:
+                    selected_l = tmp_left
+                    break
+        iter_r = 0
+        selected_r = ""
+        while True:
+            tmp_right = right_candidates.keys()[iter_l]
+            tmp_next = right_candidates.keys()[iter_l + 1]
+            if right_candidates[tmp_right] < 0:
+                break
+            else:
+                if in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][tmp_right], ans["point_set"][tmp_next]):
+                    iter_l += 1
+                    ans["edges"][R].remove(tmp_right)
+                    ans["edges"][tmp_right].remove(R)
+                else:
+                    selected_r = tmp_right
+                    break
+        if selected_l == "":
+            if selected_r == "":
+                # ERROR: Unreachable!
+                break
+            else:
+                # case LR1
+                R = selected_r
+                ans["edges"][L].append(R)
+                ans["edges"][R].append(L)
+        else:
+            if selected_r == "":
+                # case L1R
+                L = selected_l
+                ans["edges"][L].append(R)
+                ans["edges"][R].append(L)
+            else:
+                if in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][selected_l], ans["point_set"][selected_r]):
+                    # R1 in Circle LRL1, select R1
+                    R = selected_r
+                    ans["edges"][L].append(R)
+                    ans["edges"][R].append(L)
+                else:
+                    # R1 out of Circle LRL1, select L1
+                    L = selected_l
+                    ans["edges"][L].append(R)
+                    ans["edges"][R].append(L)
+    return ans
 
 def triangulate(subset):
     '''
@@ -266,12 +342,31 @@ def triangulate(subset):
         ans["edges"][subset[0][0]] = []
         ans["edges"][subset[1][0]] = []
         ans["edges"][subset[2][0]] = []
-        ans["edges"][subset[0][0]].append(subset[1][0])
-        ans["edges"][subset[0][0]].append(subset[2][0])
-        ans["edges"][subset[1][0]].append(subset[0][0])
-        ans["edges"][subset[1][0]].append(subset[2][0])
-        ans["edges"][subset[2][0]].append(subset[0][0])
-        ans["edges"][subset[2][0]].append(subset[1][0])
+        check_case = get_degree(ans["point_set"][subset[0][0]], ans["point_set"][subset[1][0]], ans["point_set"][subset[2][0]])
+        if check_case[1] == 0:
+            # Special case: three points on the same line
+            if check_case[0] == pi:
+                ans["edges"][subset[0][0]].append(subset[1][0])
+                ans["edges"][subset[1][0]].append(subset[0][0])
+                ans["edges"][subset[1][0]].append(subset[2][0])
+                ans["edges"][subset[2][0]].append(subset[1][0])
+            elif get_degree(ans["point_set"][subset[1][0]], ans["point_set"][subset[2][0]], ans["point_set"][subset[0][0]])[0] == pi:
+                ans["edges"][subset[0][0]].append(subset[2][0])
+                ans["edges"][subset[2][0]].append(subset[0][0])
+                ans["edges"][subset[1][0]].append(subset[2][0])
+                ans["edges"][subset[2][0]].append(subset[1][0])
+            else:
+                ans["edges"][subset[0][0]].append(subset[1][0])
+                ans["edges"][subset[0][0]].append(subset[2][0])
+                ans["edges"][subset[1][0]].append(subset[0][0])
+                ans["edges"][subset[2][0]].append(subset[0][0])
+        else:
+            ans["edges"][subset[0][0]].append(subset[1][0])
+            ans["edges"][subset[0][0]].append(subset[2][0])
+            ans["edges"][subset[1][0]].append(subset[0][0])
+            ans["edges"][subset[1][0]].append(subset[2][0])
+            ans["edges"][subset[2][0]].append(subset[0][0])
+            ans["edges"][subset[2][0]].append(subset[1][0])
         return ans
     else:
         left = subset[0 : (total_len // 2)]
@@ -297,6 +392,52 @@ def delaunay(point_set):
         }),
         ...
     ]
+    results: dict {
+        "edges": {
+            "position1": ["position2", ...],
+            "position2": ["position1", ...],
+            ...
+        },
+        "points": [
+            ("position", {
+                "y": 123,
+                "x": 234
+            }),
+            ...
+        ],
+        "point_set": {
+            "position": {
+                "y": 123,
+                "x": 234
+            },
+            ...
+        }
+    }
+    return: array [
+        [{
+            "y": 123,
+            "x": 234
+        },{
+            "y": 345,
+            "x": 456
+        },{
+            "y": 567,
+            "x": 678
+        }],
+        ...
+    ]
+    e = p - a + n, e = 1, p = number of points, a = number of edges, n = number of triangles.
     '''
     data_set = x_y_sort(point_set)
-    pass
+    results = triangulate(data_set)
+    total_len = len(results["points"])
+    ans = []
+    for iter1 in range(total_len):
+        for iter2 in range(iter1 + 1, total_len):
+            if results["points"][iter1][0] in results["edges"][results["points"][iter2][0]]:
+                assert(results["points"][iter2][0] in results["edges"][results["points"][iter1][0]])
+                for iter3 in range(iter2 + 1, total_len):
+                    if results["points"][iter3][0] in results["edges"][results["points"][iter1][0]] and results["points"][iter3][0] in results["edges"][results["points"][iter2][0]]:
+                        assert(results["points"][iter1][0] in results["edges"][results["points"][iter3][0]] and results["points"][iter2][0] in results["edges"][results["points"][iter3][0]])
+                        ans.append([results["points"][iter1][1], results["points"][iter2][1], results["points"][iter3][1]])
+    return ans
