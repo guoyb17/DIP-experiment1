@@ -1,6 +1,7 @@
 from copy import deepcopy
 from math import acos, sqrt, pi
 import numpy as np
+import time
 
 
 def x_y_sort(point_set):
@@ -27,7 +28,15 @@ def get_degree(O, F, T):
         "x": T["x"] - O["x"],
         "y": T["y"] - O["y"]
     }
-    degree = acos((vec_from["x"] * vec_to["x"] + vec_from["y"] * vec_to["y"]) / (sqrt(vec_from["x"] ** 2 + vec_from["y"] ** 2) * sqrt(vec_to["x"] ** 2 + vec_to["y"] ** 2)))
+    if sqrt(vec_from["x"] ** 2 + vec_from["y"] ** 2) * sqrt(vec_to["x"] ** 2 + vec_to["y"] ** 2) != 0:
+        cos_value = (vec_from["x"] * vec_to["x"] + vec_from["y"] * vec_to["y"]) / (sqrt(vec_from["x"] ** 2 + vec_from["y"] ** 2) * sqrt(vec_to["x"] ** 2 + vec_to["y"] ** 2))
+        if cos_value > 1:
+            cos_value = 1
+        elif cos_value < -1:
+            cos_value = -1
+    else:
+        cos_value = 1
+    degree = acos(cos_value)
     ans = vec_from["x"] * vec_to["y"] - vec_from["y"] * vec_to["x"]
     if ans > 0:
         return (degree, 1)
@@ -82,7 +91,7 @@ def get_convex_hull(sub_set, is_cw=True):
         next_point = cw(next_point, sub_set)
     else:
         next_point = ccw(next_point, sub_set)
-    while next_point != start:
+    while next_point not in ans:
         ans.append(next_point)
         if is_cw:
             next_point = cw(next_point, sub_set)
@@ -199,12 +208,11 @@ def merge_ans(left_ans, right_ans):
         }
     }
     '''
-    print("Calling merge_ans", len(left_ans["points"]), len(right_ans["points"]))
     boundary = zig_zag(left_ans, right_ans)
     edges = deepcopy(left_ans["edges"])
-    edges.update(right_ans["edges"])
+    edges.update(deepcopy(right_ans["edges"]))
     point_set = deepcopy(left_ans["point_set"])
-    point_set.update(right_ans["point_set"])
+    point_set.update(deepcopy(right_ans["point_set"]))
     ans = {
         "edges": edges,
         "points": left_ans["points"] + right_ans["points"],
@@ -239,8 +247,9 @@ def merge_ans(left_ans, right_ans):
             else:
                 if (iter_l < len(left_list) - 1) and in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][tmp_left], ans["point_set"][left_list[iter_l + 1]]):
                     iter_l += 1
-                    ans["edges"][L].remove(tmp_left)
-                    ans["edges"][tmp_left].remove(L)
+                    if tmp_left in ans["edges"][L]:
+                        ans["edges"][L].remove(tmp_left)
+                        ans["edges"][tmp_left].remove(L)
                 else:
                     selected_l = tmp_left
                     break
@@ -254,8 +263,9 @@ def merge_ans(left_ans, right_ans):
             else:
                 if (iter_r < len(right_list) - 1) and in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][tmp_right], ans["point_set"][right_list[iter_r + 1]]):
                     iter_r += 1
-                    ans["edges"][R].remove(tmp_right)
-                    ans["edges"][tmp_right].remove(R)
+                    if tmp_right in ans["edges"][R]:
+                        ans["edges"][R].remove(tmp_right)
+                        ans["edges"][tmp_right].remove(R)
                 else:
                     selected_r = tmp_right
                     break
@@ -316,7 +326,6 @@ def triangulate(subset):
         for item in subset:
             point_set[item[0]] = item[1]
     '''
-    print("Calling triangulate", len(subset))
     total_len = len(subset)
     point_set = dict(subset)
     if total_len == 1:
@@ -429,6 +438,10 @@ def delaunay(point_set):
     data_set = x_y_sort(point_set)
     results = triangulate(data_set)
     total_len = len(results["points"])
+    # edge_cnt = 0
+    # for edge_set in results["edges"].values():
+    #     edge_cnt += len(edge_set)
+    # edge_cnt = edge_cnt // 2
     ans = []
     for iter1 in range(total_len):
         for iter2 in range(iter1 + 1, total_len):
@@ -438,4 +451,5 @@ def delaunay(point_set):
                     if results["points"][iter3][0] in results["edges"][results["points"][iter1][0]] and results["points"][iter3][0] in results["edges"][results["points"][iter2][0]]:
                         # assert(results["points"][iter1][0] in results["edges"][results["points"][iter3][0]] and results["points"][iter2][0] in results["edges"][results["points"][iter3][0]])
                         ans.append([results["points"][iter1][0], results["points"][iter2][0], results["points"][iter3][0]])
+    # assert(1 == len(results["points"]) - edge_cnt + len(ans))
     return ans
