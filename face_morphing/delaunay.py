@@ -199,6 +199,7 @@ def merge_ans(left_ans, right_ans):
         }
     }
     '''
+    print("Calling merge_ans", len(left_ans["points"]), len(right_ans["points"]))
     boundary = zig_zag(left_ans, right_ans)
     edges = deepcopy(left_ans["edges"])
     edges.update(right_ans["edges"])
@@ -315,6 +316,7 @@ def triangulate(subset):
         for item in subset:
             point_set[item[0]] = item[1]
     '''
+    print("Calling triangulate", len(subset))
     total_len = len(subset)
     point_set = dict(subset)
     if total_len == 1:
@@ -375,7 +377,7 @@ def triangulate(subset):
         return ans
     else:
         left = subset[0 : (total_len // 2)]
-        right = subset[((total_len // 2) + 1) : (total_len - 1)]
+        right = subset[(total_len // 2) : total_len]
         left_ans = triangulate(left)
         right_ans = triangulate(right)
         return merge_ans(left_ans, right_ans)
