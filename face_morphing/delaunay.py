@@ -139,8 +139,8 @@ def zig_zag(left_set, right_set):
         "bottom": (BL, BR)
     }
     '''
-    assert(test_convex_hull(left_set, False))
-    assert(test_convex_hull(right_set, True))
+    # assert(test_convex_hull(left_set, False))
+    # assert(test_convex_hull(right_set, True))
     ans = {}
     left_convex_hull = get_convex_hull(left_set, False)
     right_convex_hull = get_convex_hull(right_set, True)
@@ -431,9 +431,9 @@ def delaunay(point_set):
     for iter1 in range(total_len):
         for iter2 in range(iter1 + 1, total_len):
             if results["points"][iter1][0] in results["edges"][results["points"][iter2][0]]:
-                assert(results["points"][iter2][0] in results["edges"][results["points"][iter1][0]])
+                # assert(results["points"][iter2][0] in results["edges"][results["points"][iter1][0]])
                 for iter3 in range(iter2 + 1, total_len):
                     if results["points"][iter3][0] in results["edges"][results["points"][iter1][0]] and results["points"][iter3][0] in results["edges"][results["points"][iter2][0]]:
-                        assert(results["points"][iter1][0] in results["edges"][results["points"][iter3][0]] and results["points"][iter2][0] in results["edges"][results["points"][iter3][0]])
+                        # assert(results["points"][iter1][0] in results["edges"][results["points"][iter3][0]] and results["points"][iter2][0] in results["edges"][results["points"][iter3][0]])
                         ans.append([results["points"][iter1][0], results["points"][iter2][0], results["points"][iter3][0]])
     return ans

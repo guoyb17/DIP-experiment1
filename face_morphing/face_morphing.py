@@ -40,12 +40,12 @@ def get_y_range(triangle, x):
             ans_1 = min(y1, y2)
             ans_2 = max(y1, y2)
         else:
-            assert(legal_3)
+            # assert(legal_3)
             ans_1 = min(y1, y3)
             ans_2 = max(y1, y3)
     else:
-        assert(legal_2)
-        assert(legal_3)
+        # assert(legal_2)
+        # assert(legal_3)
         ans_1 = min(y2, y3)
         ans_2 = max(y2, y3)
     return (int(round(ans_1)), int(round(ans_2)))
@@ -75,7 +75,7 @@ def main(iptfrom, iptto, prefix, num):
     mark_to["global_mid_down"] = {"y": to_height - 1, "x": to_width // 2}
     mark_to["global_left_down"] = {"y": to_height - 1, "x": 0}
     mark_to["global_left_mid"] = {"y": to_height // 2, "x": 0}
-    assert(len(mark_from) == len(mark_to))
+    # assert(len(mark_from) == len(mark_to))
     triangles = delaunay(mark_from)
     for iter_n in range(num):
         alpha = (iter_n + 1) / (num + 1)

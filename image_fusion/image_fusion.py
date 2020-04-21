@@ -59,7 +59,7 @@ def gauss_seidel(A, x0, b, n):
                     sum_ax += A[2][iter_c] * x[c]
                 else:
                     the_iter_c = iter_c
-            assert(the_iter_c != -1)
+            # assert(the_iter_c != -1)
             x[iter_i] = (b[iter_i] - sum_ax) / A[2][the_iter_c]
     return x
 
@@ -103,8 +103,8 @@ def main(ipt_img, opt_img, mask_img, background, times, align_height, align_widt
     bg_bitmap = np.array(bg_src).astype(np.int)
     mask_src = image.open(mask_img).convert("1")
     mask_width, mask_height = mask_src.size
-    assert(ipt_width == mask_width)
-    assert(ipt_height == mask_height)
+    # assert(ipt_width == mask_width)
+    # assert(ipt_height == mask_height)
     mask_bitmap = np.array(mask_src)
     mask_csr = get_mask(mask_bitmap, mask_width, mask_height)
     total_n = mask_csr[0][-1]
@@ -119,7 +119,7 @@ def main(ipt_img, opt_img, mask_img, background, times, align_height, align_widt
             c = mask_csr[1][iter_c]
             A_buff[iter_r * mask_width + c] = (cnt, at_boundary(mask_csr, iter_r, c))
             cnt += 1
-    assert(cnt == total_n)
+    # assert(cnt == total_n)
     cnt = 0
     for iter_i in A_buff.keys():
         iter_r = iter_i // mask_width
@@ -145,7 +145,7 @@ def main(ipt_img, opt_img, mask_img, background, times, align_height, align_widt
         A[0].append(len(A[1]))
         x0.append(ipt_bitmap[iter_r][iter_c])
         cnt += 1
-    assert(cnt == total_n)
+    # assert(cnt == total_n)
     x = gauss_seidel(A, x0, b, times)
     cover = [[], [], []]
     cnt = 0
@@ -160,7 +160,7 @@ def main(ipt_img, opt_img, mask_img, background, times, align_height, align_widt
         cover[1].append(iter_c)
         cover[2].append(x[cnt])
         cnt += 1
-    assert(cnt == total_n)
+    # assert(cnt == total_n)
     for _ in range(ipt_height - current_iter_r):
         cover[0].append(len(cover[1]))
     ans_bitmap = update(bg_bitmap, cover)
