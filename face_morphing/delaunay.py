@@ -1,7 +1,6 @@
 from copy import deepcopy
 from math import acos, sqrt, pi
 import numpy as np
-import time
 
 from graham_scan import graham_scan
 
@@ -186,10 +185,6 @@ def zig_zag(left_set, right_set):
         else:
             break
     ans["bottom"] = (L, R)
-    if output_result:
-        print(left_set, right_set)
-        print(ans)
-        time.sleep(1)
     return ans
 
 def merge_ans(left_ans, right_ans):
@@ -217,7 +212,7 @@ def merge_ans(left_ans, right_ans):
         }
     }
     '''
-    boundary = zig_zag(left_ans, right_ans)
+    # boundary = zig_zag(left_ans, right_ans)
     edges = deepcopy(left_ans["edges"])
     edges.update(deepcopy(right_ans["edges"]))
     point_set = deepcopy(left_ans["point_set"])
@@ -227,6 +222,22 @@ def merge_ans(left_ans, right_ans):
         "points": left_ans["points"] + right_ans["points"],
         "point_set": point_set
     }
+    convex_hull = graham_scan(ans["points"])
+    boundary = {}
+    boundary_tmp = []
+    for iter_i in range(len(convex_hull)):
+        if convex_hull[iter_i][0] in left_ans["point_set"].keys() and convex_hull[(iter_i + 1) % len(convex_hull)][0] in right_ans["point_set"].keys():
+            boundary_tmp.append((convex_hull[iter_i][0], convex_hull[(iter_i + 1) % len(convex_hull)][0]))
+        elif convex_hull[(iter_i + 1) % len(convex_hull)][0] in left_ans["point_set"].keys() and convex_hull[iter_i][0] in right_ans["point_set"].keys():
+            boundary_tmp.append((convex_hull[(iter_i + 1) % len(convex_hull)][0], convex_hull[iter_i][0]))
+        if len(boundary_tmp) == 2:
+            break
+    if left_ans["point_set"][boundary_tmp[0][0]]["y"] < left_ans["point_set"][boundary_tmp[1][0]]["y"]:
+        boundary["bottom"] = (boundary_tmp[0])
+        boundary["top"] = (boundary_tmp[1])
+    else:
+        boundary["bottom"] = (boundary_tmp[1])
+        boundary["top"] = (boundary_tmp[0])
     L = boundary["bottom"][0]
     R = boundary["bottom"][1]
     ans["edges"][L].append(R)

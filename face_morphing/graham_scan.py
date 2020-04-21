@@ -132,7 +132,6 @@ def graham_scan(points):
             length = len(stack)
             top = stack[length - 1]
             next_top = stack[length - 2]
-            print(next_top)
             v1 = [sorted_points[i][1]["x"] - next_top[1]["x"], sorted_points[i][1]["y"] - next_top[1]["y"]]
             v2 = [top[1]["x"] - next_top[1]["x"], top[1]["y"] - next_top[1]["y"]]
  
