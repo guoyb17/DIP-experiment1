@@ -414,16 +414,7 @@ def delaunay(point_set):
         }
     }
     return: array [
-        [{
-            "y": 123,
-            "x": 234
-        },{
-            "y": 345,
-            "x": 456
-        },{
-            "y": 567,
-            "x": 678
-        }],
+        ["position1", "position2", "position3"],
         ...
     ]
     e = p - a + n, e = 1, p = number of points, a = number of edges, n = number of triangles.
@@ -439,5 +430,5 @@ def delaunay(point_set):
                 for iter3 in range(iter2 + 1, total_len):
                     if results["points"][iter3][0] in results["edges"][results["points"][iter1][0]] and results["points"][iter3][0] in results["edges"][results["points"][iter2][0]]:
                         assert(results["points"][iter1][0] in results["edges"][results["points"][iter3][0]] and results["points"][iter2][0] in results["edges"][results["points"][iter3][0]])
-                        ans.append([results["points"][iter1][1], results["points"][iter2][1], results["points"][iter3][1]])
+                        ans.append([results["points"][iter1][0], results["points"][iter2][0], results["points"][iter3][0]])
     return ans
