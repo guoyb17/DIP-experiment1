@@ -129,9 +129,9 @@ def in_circle(A, B, C, D):
     Judge whether D is within Circle ABC.
     '''
     sign = np.array([
-        [A["x"], A["y"], A["x"] * A["x"] + A["y"] * A["y"]],
-        [B["x"], B["y"], B["x"] * B["x"] + B["y"] * B["y"]],
-        [C["x"], C["y"], C["x"] * C["x"] + C["y"] * C["y"]]
+        [A["x"], A["y"], 1],
+        [B["x"], B["y"], 1],
+        [C["x"], C["y"], 1]
     ])
     ret = np.array([
         [A["x"], A["y"], A["x"] * A["x"] + A["y"] * A["y"], 1],
@@ -139,6 +139,8 @@ def in_circle(A, B, C, D):
         [C["x"], C["y"], C["x"] * C["x"] + C["y"] * C["y"], 1],
         [D["x"], D["y"], D["x"] * D["x"] + D["y"] * D["y"], 1]
     ])
+    # print(sign, np.linalg.det(sign))
+    # print(ret, np.linalg.det(ret))
     return np.linalg.det(ret) * np.linalg.det(sign) < 0
 
 def zig_zag(left_set, right_set):
@@ -278,7 +280,7 @@ def merge_ans(left_ans, right_ans, from_height, from_width):
     if "global_left_up" in convex_hull_nodes and "global_left_down" in convex_hull_nodes and "global_left_mid" in ans["point_set"].keys() and "global_left_mid" not in convex_hull_nodes:
         insert_iter_1 = convex_hull_nodes.index("global_left_up")
         insert_iter_2 = convex_hull_nodes.index("global_left_down")
-        print(convex_hull_nodes)
+        # print(convex_hull_nodes)
         assert((abs(insert_iter_1 - insert_iter_2) == 1) or ((insert_iter_1 == 0) and (insert_iter_2 == len(convex_hull) - 1)) or ((insert_iter_2 == 0) and (insert_iter_1 == len(convex_hull) - 1)))
         convex_hull.insert(max(insert_iter_1, insert_iter_2), ("global_left_mid", ans["point_set"]["global_left_mid"]))
     if "global_right_up" in convex_hull_nodes and "global_right_down" in convex_hull_nodes and "global_right_mid" in ans["point_set"].keys() and "global_right_mid" not in convex_hull_nodes:
@@ -318,19 +320,28 @@ def merge_ans(left_ans, right_ans, from_height, from_width):
     selected = []
     selected.append(L)
     selected.append(R)
-    if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
-        print("============")
-        print(left_ans["point_set"].keys())
-        print(right_ans["point_set"].keys())
-        print(left_ans["edges"])
-        print(right_ans["edges"])
-        print(convex_hull)
-        print(boundary)
+    # print("============")
+    # print(left_ans["point_set"].keys())
+    # print(right_ans["point_set"].keys())
+    # print(left_ans["edges"])
+    # print(right_ans["edges"])
+    # print(convex_hull)
+    # print(boundary)
+    # if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
+    #     print("============")
+    #     print(left_ans["point_set"].keys())
+    #     print(right_ans["point_set"].keys())
+    #     print(left_ans["edges"])
+    #     print(right_ans["edges"])
+    #     print(convex_hull)
+    #     print(boundary)
     while L != boundary["top"][0] or R != boundary["top"][1]:
         neighbors = left_ans["edges"][L] + right_ans["edges"][R]
-        if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
-            print(L, R)
-            print(neighbors)
+        # print(L, R)
+        # print(neighbors)
+        # if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
+        #     print(L, R)
+        #     print(neighbors)
         selection = ""
         for candidate in neighbors:
             if candidate in selected:
@@ -344,9 +355,12 @@ def merge_ans(left_ans, right_ans, from_height, from_width):
             else:
                 if in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][selection], ans["point_set"][candidate]):
                     selection = candidate
+                # else:
+                #     print(ans["point_set"][L], ans["point_set"][R], ans["point_set"][selection], ans["point_set"][candidate])
         selected.append(selection)
-        if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
-            print(selection)
+        # print(selection)
+        # if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
+        #     print(selection)
         if selection in left_ans["edges"][L]:
             for victim in left_ans["edges"][L]:
                 if victim != selection and edge_cross(ans["point_set"][L], ans["point_set"][victim], ans["point_set"][R], ans["point_set"][selection]):
@@ -442,12 +456,17 @@ def merge_ans(left_ans, right_ans, from_height, from_width):
         #             L = selected_l
         #             ans["edges"][L].append(R)
         #             ans["edges"][R].append(L)
-    if len(ans["points"]) == 4:
-        print("========================")
-        print(left_ans_backup)
-        print(right_ans_backup)
-        print(ans)
-        print("========================")
+    # print("========================")
+    # print(left_ans_backup)
+    # print(right_ans_backup)
+    # print(ans)
+    # print("========================")
+    # if len(ans["points"]) == 4:
+    #     print("========================")
+    #     print(left_ans_backup)
+    #     print(right_ans_backup)
+    #     print(ans)
+    #     print("========================")
     for edges in ans["edges"].values():
         if len(edges) <= 1:
             print(left_ans_backup)
