@@ -148,20 +148,32 @@ def main(iptfrom, iptto, prefix, num):
         opt_bitmap = np.zeros((opt_height, opt_width, 3))
         mark_out = {}
         for point in mark_from.keys():
-            tmp_y = int(round((1 - alpha) * mark_from[point]["y"] + alpha * mark_to[point]["y"]))
+            tmp_y = (1 - alpha) * mark_from[point]["y"] + alpha * mark_to[point]["y"]
             if tmp_y < 0:
                 tmp_y = 0
-            elif tmp_y >= opt_height:
+            elif tmp_y >= opt_height - 1:
                 tmp_y = opt_height - 1
-            tmp_x = int(round((1 - alpha) * mark_from[point]["x"] + alpha * mark_to[point]["x"]))
+            else:
+                tmp_y = int(round(tmp_y))
+            tmp_x = (1 - alpha) * mark_from[point]["x"] + alpha * mark_to[point]["x"]
             if tmp_x < 0:
                 tmp_x = 0
-            elif tmp_x >= opt_width:
+            elif tmp_x >= opt_width - 1:
                 tmp_x = opt_width - 1
+            else:
+                tmp_x = int(round(tmp_x))
             mark_out[point] = {
                 "y": tmp_y,
                 "x": tmp_x
             }
+        mark_out["global_left_up"] = {"y": 0, "x": 0}
+        mark_out["global_mid_up"] = {"y": 0, "x": opt_width // 2}
+        mark_out["global_right_up"] = {"y": 0, "x": opt_width - 1}
+        mark_out["global_right_mid"] = {"y": opt_height // 2, "x": opt_width - 1}
+        mark_out["global_right_down"] = {"y": opt_height - 1, "x": opt_width - 1}
+        mark_out["global_mid_down"] = {"y": opt_height - 1, "x": opt_width // 2}
+        mark_out["global_left_down"] = {"y": opt_height - 1, "x": 0}
+        mark_out["global_left_mid"] = {"y": opt_height // 2, "x": 0}
         for triangle in triangles:
             from_array = np.array([
                 [mark_from[triangle[0]]["y"], mark_from[triangle[1]]["y"], mark_from[triangle[2]]["y"]],
