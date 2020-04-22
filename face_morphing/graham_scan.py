@@ -1,5 +1,4 @@
 from math import acos, sqrt, pi
-from time import sleep
 
 
 def get_bottom_point(points):

@@ -138,8 +138,6 @@ def in_circle(A, B, C, D):
         [C["x"], C["y"], C["x"] * C["x"] + C["y"] * C["y"], 1],
         [D["x"], D["y"], D["x"] * D["x"] + D["y"] * D["y"], 1]
     ])
-    print(sign, np.linalg.det(sign))
-    print(ret, np.linalg.det(ret))
     return np.linalg.det(ret) * np.linalg.det(sign) > 0
 
 def zig_zag(left_set, right_set):
@@ -255,48 +253,39 @@ def merge_ans(left_ans, right_ans, from_height, from_width):
         "points": left_ans["points"] + right_ans["points"],
         "point_set": point_set
     }
-    # same_x = True
-    # for iter_i in range(len(ans["points"])):
-    #     for iter_j in range(iter_i, len(ans["points"])):
-    #         if ans["points"][iter_i][1]["x"] != ans["points"][iter_j][1]["x"]:
-    #             same_x = False
-    #             break
-    #     if not same_x:
-    #         break
-    # if same_x:
-    #     ans["points"] = sorted(ans["points"], key=lambda item: item[1]["y"])
-    #     edges = {}
-    #     for iter_i in range(len(ans["points"])):
-    #         edges[ans["points"][iter_i][0]] = []
-    #     for iter_i in range(len(ans["points"]) - 1):
-    #         edges[ans["points"][iter_i][0]].append(ans["points"][iter_i + 1][0])
-    #         edges[ans["points"][iter_i + 1][0]].append(ans["points"][iter_i][0])
-    #     ans["edges"] = edges
-    #     return ans
+    # Special case: all on the same line.
+    same_l = True
+    for iter_i in range(2, len(ans["points"])):
+        if get_degree(ans["points"][0][1], ans["points"][1][1], ans["points"][iter_i][1])[1] != 0:
+            same_l = False
+            break
+    if same_l:
+        ans["points"] = sorted(ans["points"], key=lambda item: item[1]["y"])
+        ans["points"] = sorted(ans["points"], key=lambda item: item[1]["x"])
+        edges = {}
+        edges[ans["points"][0][0]] = []
+        for iter_i in range(len(ans["points"]) - 1):
+            edges[ans["points"][iter_i][0]].append(ans["points"][iter_i + 1][0])
+            edges[ans["points"][iter_i + 1][0]] = []
+            edges[ans["points"][iter_i + 1][0]].append(ans["points"][iter_i][0])
+        ans["edges"] = edges
+        return ans
     convex_hull = graham_scan(deepcopy(ans["points"]))
-    convex_hull_nodes = list(dict(convex_hull).keys())
-    # Special case: deal with points on the same line of THE 8 points.
-    if "global_left_up" in convex_hull_nodes and "global_left_down" in convex_hull_nodes and "global_left_mid" in ans["point_set"].keys() and "global_left_mid" not in convex_hull_nodes:
-        insert_iter_1 = convex_hull_nodes.index("global_left_up")
-        insert_iter_2 = convex_hull_nodes.index("global_left_down")
-        # print(convex_hull_nodes)
-        assert((abs(insert_iter_1 - insert_iter_2) == 1) or ((insert_iter_1 == 0) and (insert_iter_2 == len(convex_hull) - 1)) or ((insert_iter_2 == 0) and (insert_iter_1 == len(convex_hull) - 1)))
-        convex_hull.insert(max(insert_iter_1, insert_iter_2), ("global_left_mid", ans["point_set"]["global_left_mid"]))
-    if "global_right_up" in convex_hull_nodes and "global_right_down" in convex_hull_nodes and "global_right_mid" in ans["point_set"].keys() and "global_right_mid" not in convex_hull_nodes:
-        insert_iter_1 = convex_hull_nodes.index("global_right_up")
-        insert_iter_2 = convex_hull_nodes.index("global_right_down")
-        assert((abs(insert_iter_1 - insert_iter_2) == 1) or ((insert_iter_1 == 0) and (insert_iter_2 == len(convex_hull) - 1)) or ((insert_iter_2 == 0) and (insert_iter_1 == len(convex_hull) - 1)))
-        convex_hull.insert(max(insert_iter_1, insert_iter_2), ("global_right_mid", ans["point_set"]["global_right_mid"]))
-    if "global_left_up" in convex_hull_nodes and "global_right_up" in convex_hull_nodes and "global_mid_up" in ans["point_set"].keys() and "global_mid_up" not in convex_hull_nodes:
-        insert_iter_1 = convex_hull_nodes.index("global_left_up")
-        insert_iter_2 = convex_hull_nodes.index("global_right_up")
-        assert((abs(insert_iter_1 - insert_iter_2) == 1) or ((insert_iter_1 == 0) and (insert_iter_2 == len(convex_hull) - 1)) or ((insert_iter_2 == 0) and (insert_iter_1 == len(convex_hull) - 1)))
-        convex_hull.insert(max(insert_iter_1, insert_iter_2), ("global_mid_up", ans["point_set"]["global_mid_up"]))
-    if "global_left_down" in convex_hull_nodes and "global_right_down" in convex_hull_nodes and "global_mid_down" in ans["point_set"].keys() and "global_mid_down" not in convex_hull_nodes:
-        insert_iter_1 = convex_hull_nodes.index("global_left_down")
-        insert_iter_2 = convex_hull_nodes.index("global_right_down")
-        assert((abs(insert_iter_1 - insert_iter_2) == 1) or ((insert_iter_1 == 0) and (insert_iter_2 == len(convex_hull) - 1)) or ((insert_iter_2 == 0) and (insert_iter_1 == len(convex_hull) - 1)))
-        convex_hull.insert(max(insert_iter_1, insert_iter_2), ("global_mid_down", ans["point_set"]["global_mid_down"]))
+    # Special case: deal with points on the same line with convex hull points.
+    finished = False
+    while not finished:
+        finished = True
+        ref_list = dict(convex_hull).keys()
+        for iter_i in range(len(convex_hull)):
+            for point in ans["point_set"].keys():
+                if point in ref_list:
+                    continue
+                if get_degree(ans["point_set"][point], convex_hull[iter_i][1], convex_hull[(iter_i + 1) % len(convex_hull)][1])[0] == pi:
+                    convex_hull.insert((iter_i + 1) % len(convex_hull), (point, ans["point_set"][point]))
+                    finished = False
+                    break
+            if not finished:
+                break
     boundary = {}
     boundary_tmp = []
     for iter_i in range(len(convex_hull)):
@@ -306,7 +295,8 @@ def merge_ans(left_ans, right_ans, from_height, from_width):
             boundary_tmp.append((convex_hull[(iter_i + 1) % len(convex_hull)][0], convex_hull[iter_i][0]))
         if len(boundary_tmp) == 2:
             break
-    if left_ans["point_set"][boundary_tmp[0][0]]["y"] < left_ans["point_set"][boundary_tmp[1][0]]["y"]:
+    if get_degree(left_ans["point_set"][boundary_tmp[1][0]], left_ans["point_set"][boundary_tmp[0][0]], right_ans["point_set"][boundary_tmp[1][1]])[1] >= 0\
+    and get_degree(left_ans["point_set"][boundary_tmp[1][0]], right_ans["point_set"][boundary_tmp[0][1]], right_ans["point_set"][boundary_tmp[1][1]])[1] >= 0:
         boundary["bottom"] = (boundary_tmp[0])
         boundary["top"] = (boundary_tmp[1])
     else:
@@ -316,165 +306,58 @@ def merge_ans(left_ans, right_ans, from_height, from_width):
     R = boundary["bottom"][1]
     ans["edges"][L].append(R)
     ans["edges"][R].append(L)
-    selected = []
-    selected.append(L)
-    selected.append(R)
-    print("============")
-    print(left_ans["point_set"].keys())
-    print(right_ans["point_set"].keys())
-    print(left_ans["edges"])
-    print(right_ans["edges"])
-    print(convex_hull)
-    print(boundary)
-    # if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
-    #     print("============")
-    #     print(left_ans["point_set"].keys())
-    #     print(right_ans["point_set"].keys())
-    #     print(left_ans["edges"])
-    #     print(right_ans["edges"])
-    #     print(convex_hull)
-    #     print(boundary)
     while L != boundary["top"][0] or R != boundary["top"][1]:
         neighbors = left_ans["edges"][L] + right_ans["edges"][R]
-        print(L, R)
-        print(neighbors)
-        # if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
-        #     print(L, R)
-        #     print(neighbors)
         selection = ""
         for candidate in neighbors:
-            if candidate in selected:
+            if candidate in left_ans["edges"][L] and get_degree(ans["point_set"][R], ans["point_set"][candidate], ans["point_set"][L])[1] != 1:
                 continue
-            if candidate in left_ans["edges"][L] and get_degree(ans["point_set"][L], ans["point_set"][candidate], ans["point_set"][R])[1] != -1:
-                continue
-            if candidate in right_ans["edges"][R] and get_degree(ans["point_set"][R], ans["point_set"][candidate], ans["point_set"][L])[1] != 1:
+            if candidate in right_ans["edges"][R] and get_degree(ans["point_set"][L], ans["point_set"][R], ans["point_set"][candidate])[1] != 1:
                 continue
             if selection == "":
                 selection = candidate
             else:
                 if in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][selection], ans["point_set"][candidate]):
                     selection = candidate
-                else:
-                    print(ans["point_set"][L], ans["point_set"][R], ans["point_set"][selection], ans["point_set"][candidate])
-        selected.append(selection)
-        print(selection)
-        # if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
-        #     print(selection)
         if selection in left_ans["edges"][L]:
             for victim in left_ans["edges"][L]:
-                if victim != selection and edge_cross(ans["point_set"][L], ans["point_set"][victim], ans["point_set"][R], ans["point_set"][selection]):
+                if victim != selection and victim != R and edge_cross(ans["point_set"][L], ans["point_set"][victim], ans["point_set"][R], ans["point_set"][selection]):
                     left_ans["edges"][L].remove(victim)
                     left_ans["edges"][victim].remove(L)
                     ans["edges"][L].remove(victim)
                     ans["edges"][victim].remove(L)
             L = selection
-            ans["edges"][L].append(R)
-            ans["edges"][R].append(L)
+            # Special case: to add a line conflict with existing lines.
+            not_add = False
+            for point in ans["point_set"].keys():
+                if point in ans["edges"][L] and point in ans["edges"][R] and get_degree(ans["point_set"][L], ans["point_set"][point], ans["point_set"][R])[1] == 0:
+                    not_add = True
+                    break
+            if not not_add:
+                ans["edges"][L].append(R)
+                ans["edges"][R].append(L)
         elif selection in right_ans["edges"][R]:
             for victim in right_ans["edges"][R]:
-                if victim != selection and edge_cross(ans["point_set"][R], ans["point_set"][victim], ans["point_set"][L], ans["point_set"][selection]):
+                if victim != selection and victim != L and edge_cross(ans["point_set"][R], ans["point_set"][victim], ans["point_set"][L], ans["point_set"][selection]):
                     right_ans["edges"][R].remove(victim)
                     right_ans["edges"][victim].remove(R)
                     ans["edges"][R].remove(victim)
                     ans["edges"][victim].remove(R)
             R = selection
-            ans["edges"][L].append(R)
-            ans["edges"][R].append(L)
+            not_add = False
+            for point in ans["point_set"].keys():
+                if point in ans["edges"][L] and point in ans["edges"][R] and get_degree(ans["point_set"][L], ans["point_set"][point], ans["point_set"][R])[1] == 0:
+                    not_add = True
+                    break
+            if not not_add:
+                ans["edges"][L].append(R)
+                ans["edges"][R].append(L)
         else:
             # ERROR: Should not reach!
+            # assert(False)
             break
-        # left_candidates = {}
-        # for candidate in left_ans["edges"][L]:
-        #     (tmp, sign) = get_degree(ans["point_set"][L], ans["point_set"][R], ans["point_set"][candidate])
-        #     if sign == -1: # should not happen
-        #         tmp = -tmp
-        #     left_candidates[candidate] = tmp
-        # left_candidates = dict(sorted(left_candidates.items(), key=lambda item: item[1]))
-        # right_candidates = {}
-        # for candidate in right_ans["edges"][R]:
-        #     (tmp, sign) = get_degree(ans["point_set"][R], ans["point_set"][candidate], ans["point_set"][L])
-        #     if sign == -1: # should not happen
-        #         tmp = -tmp
-        #     right_candidates[candidate] = tmp
-        # right_candidates = dict(sorted(right_candidates.items(), key=lambda item: item[1]))
-        # iter_l = 0
-        # selected_l = ""
-        # left_list = list(left_candidates.keys())
-        # while True:
-        #     tmp_left = left_list[iter_l]
-        #     if left_candidates[tmp_left] < 0:
-        #         break
-        #     else:
-        #         if (iter_l < len(left_list) - 1) and in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][tmp_left], ans["point_set"][left_list[iter_l + 1]]):
-        #             iter_l += 1
-        #             if tmp_left in ans["edges"][L]:
-        #                 ans["edges"][L].remove(tmp_left)
-        #                 ans["edges"][tmp_left].remove(L)
-        #         else:
-        #             selected_l = tmp_left
-        #             break
-        # iter_r = 0
-        # selected_r = ""
-        # right_list = list(right_candidates.keys())
-        # while True:
-        #     tmp_right = right_list[iter_r]
-        #     if right_candidates[tmp_right] < 0:
-        #         break
-        #     else:
-        #         if (iter_r < len(right_list) - 1) and in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][tmp_right], ans["point_set"][right_list[iter_r + 1]]):
-        #             iter_r += 1
-        #             if tmp_right in ans["edges"][R]:
-        #                 ans["edges"][R].remove(tmp_right)
-        #                 ans["edges"][tmp_right].remove(R)
-        #         else:
-        #             selected_r = tmp_right
-        #             break
-        # if selected_l == "":
-        #     if selected_r == "":
-        #         # ERROR: Unreachable!
-        #         break
-        #     else:
-        #         # case LR1
-        #         R = selected_r
-        #         ans["edges"][L].append(R)
-        #         ans["edges"][R].append(L)
-        # else:
-        #     if selected_r == "":
-        #         # case L1R
-        #         L = selected_l
-        #         ans["edges"][L].append(R)
-        #         ans["edges"][R].append(L)
-        #     else:
-        #         if not in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][selected_l], ans["point_set"][selected_r]):
-        #             # R1 in Circle LRL1, select R1
-        #             R = selected_r
-        #             ans["edges"][L].append(R)
-        #             ans["edges"][R].append(L)
-        #         else:
-        #             # R1 out of Circle LRL1, select L1
-        #             L = selected_l
-        #             ans["edges"][L].append(R)
-        #             ans["edges"][R].append(L)
-    print("========================")
-    print(left_ans_backup)
-    print(right_ans_backup)
-    print(ans)
-    print("========================")
-    # if len(ans["points"]) == 4:
-    #     print("========================")
-    #     print(left_ans_backup)
-    #     print(right_ans_backup)
-    #     print(ans)
-    #     print("========================")
-    for edges in ans["edges"].values():
-        if len(edges) <= 1:
-            print(left_ans_backup)
-            print(right_ans_backup)
-            print(ans)
-        assert(len(edges) > 1)
-    if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
-        print(ans["edges"]["global_right_down"])
-        print("============")
+    # for edges in ans["edges"].values():
+    #     assert(len(edges) > 1)
     return ans
 
 def triangulate(subset, from_height, from_width):

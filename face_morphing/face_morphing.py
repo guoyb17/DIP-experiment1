@@ -66,13 +66,49 @@ def remove_duplicate(point_set):
     pop_list = []
     for iter_i in range(len(points)):
         for iter_j in range(iter_i + 1, len(points)):
-            if point_set[iter_i][1]["x"] == point_set[iter_j][1]["x"] and point_set[iter_i][1]["y"] == point_set[iter_j][1]["y"]:
-                pop_list.insert(iter_j)
+            if points[iter_i][1]["x"] == points[iter_j][1]["x"] and points[iter_i][1]["y"] == points[iter_j][1]["y"]:
+                pop_list.append(iter_j)
     pop_list.sort(reverse=True)
     poped_items = []
     for pop_iter in pop_list:
         poped_items.append(points.pop(pop_iter))
     return (dict(poped_items), dict(points))
+
+def in_triangle(mark_out, triangle_data, x, y):
+    '''
+    Get which triangle (x, y) is in.
+    return: iterator index of triangle_data.
+    '''
+    for iter_t in range(len(triangle_data)):
+        triangle = triangle_data[iter_t][0]
+        x_from = min(mark_out[triangle[0]]["y"], mark_out[triangle[1]]["y"], mark_out[triangle[2]]["y"])
+        x_to = max(mark_out[triangle[0]]["y"], mark_out[triangle[1]]["y"], mark_out[triangle[2]]["y"])
+        if x < x_from or x > x_to:
+            continue
+        triangle_range = [(mark_out[triangle[0]]["y"], mark_out[triangle[0]]["x"]),
+                          (mark_out[triangle[1]]["y"], mark_out[triangle[1]]["x"]),
+                          (mark_out[triangle[2]]["y"], mark_out[triangle[2]]["x"])]
+        (y_min, y_max) = get_y_range(triangle_range, x)
+        if y >= y_min and y <= y_max:
+            return iter_t
+    bias = 1
+    while True:
+        for iter_t in range(len(triangle_data)):
+            triangle = triangle_data[iter_t][0]
+            x_from = min(mark_out[triangle[0]]["y"], mark_out[triangle[1]]["y"], mark_out[triangle[2]]["y"])
+            x_to = max(mark_out[triangle[0]]["y"], mark_out[triangle[1]]["y"], mark_out[triangle[2]]["y"])
+            if x < x_from or x > x_to:
+                continue
+            triangle_range = [(mark_out[triangle[0]]["y"], mark_out[triangle[0]]["x"]),
+                            (mark_out[triangle[1]]["y"], mark_out[triangle[1]]["x"]),
+                            (mark_out[triangle[2]]["y"], mark_out[triangle[2]]["x"])]
+            (y_min, y_max) = get_y_range(triangle_range, x)
+            if y >= y_min - bias and y <= y_max + bias:
+                # print("[WARN] (" + str(x) + ", " + str(y) + ") not found directly. Return with bias = " + str(bias))
+                return iter_t
+        bias += 1
+    # assert(False) # Typically should not reach!
+    return 0
 
 def main(iptfrom, iptto, prefix, num):
     from_src = image.open(iptfrom).convert("RGB")
@@ -104,17 +140,8 @@ def main(iptfrom, iptto, prefix, num):
     for item in pop_from.keys():
         mark_to.pop(item)
     triangles = delaunay(mark_from, from_height, from_width)
-    # mark_from["global_mid_up"] = {"y": 0, "x": from_width // 2}
-    # mark_from["global_right_mid"] = {"y": from_height // 2, "x": from_width - 1}
-    # mark_from["global_mid_down"] = {"y": from_height - 1, "x": from_width // 2}
-    # mark_from["global_left_mid"] = {"y": from_height // 2, "x": 0}
-    # mark_to["global_mid_up"] = {"y": 0, "x": to_width // 2}
-    # mark_to["global_right_mid"] = {"y": to_height // 2, "x": to_width - 1}
-    # mark_to["global_mid_down"] = {"y": to_height - 1, "x": to_width // 2}
-    # mark_to["global_left_mid"] = {"y": to_height // 2, "x": 0}
-    # print(len(triangles))
-    # print(triangles)
     for iter_n in range(num):
+        triangles_result = []
         alpha = (iter_n + 1) / (num + 1)
         opt_height = int(round((1 - alpha) * from_height + alpha * to_height))
         opt_width = int(round((1 - alpha) * from_width + alpha * to_width))
@@ -154,52 +181,42 @@ def main(iptfrom, iptto, prefix, num):
             try:
                 affine_array = np.dot(from_array, np.linalg.inv(to_array))
                 full_array = np.dot(to_all, np.linalg.inv(to_array))
-                x_from = min(mark_out[triangle[0]]["y"], mark_out[triangle[1]]["y"], mark_out[triangle[2]]["y"])
-                x_to = max(mark_out[triangle[0]]["y"], mark_out[triangle[1]]["y"], mark_out[triangle[2]]["y"])
-                for iter_x in range(x_from, x_to):
-                    if iter_x < 0:
-                        continue
-                    elif iter_x >= opt_height:
-                        break
-                    triangle_range = [(mark_out[triangle[0]]["y"], mark_out[triangle[0]]["x"]),
-                                    (mark_out[triangle[1]]["y"], mark_out[triangle[1]]["x"]),
-                                    (mark_out[triangle[2]]["y"], mark_out[triangle[2]]["x"])]
-                    (y_min, y_max) = get_y_range(triangle_range, iter_x)
-                    for iter_y in range(y_min, y_max):
-                        if iter_y < 0:
-                            continue
-                        elif iter_y >= opt_width:
-                            break
-                        to_vec = np.array([[iter_x], [iter_y], [1]])
-                        from_vec = np.dot(affine_array, to_vec)
-                        if from_vec[0][0] < 0:
-                            from_vec[0][0] = 0
-                        elif from_vec[0][0] >= opt_height:
-                            from_vec[0][0] = opt_height - 1
-                        else:
-                            from_vec[0][0] = int(round(from_vec[0][0]))
-                        if from_vec[1][0] < 0:
-                            from_vec[1][0] = 0
-                        elif from_vec[1][0] >= opt_width:
-                            from_vec[1][0] = opt_width - 1
-                        else:
-                            from_vec[1][0] = int(round(from_vec[1][0]))
-                        full_vec = np.dot(full_array, to_vec)
-                        if full_vec[0][0] < 0:
-                            full_vec[0][0] = 0
-                        elif full_vec[0][0] >= to_height:
-                            full_vec[0][0] = to_height - 1
-                        else:
-                            full_vec[0][0] = int(round(full_vec[0][0]))
-                        if full_vec[1][0] < 0:
-                            full_vec[1][0] = 0
-                        elif full_vec[1][0] >= to_width:
-                            full_vec[1][0] = to_width - 1
-                        else:
-                            full_vec[1][0] = int(round(full_vec[1][0]))
-                        opt_bitmap[iter_x][iter_y] = (1 - alpha) * from_bitmap[int(from_vec[0][0])][int(from_vec[1][0])] + alpha * to_bitmap[int(full_vec[0][0])][int(full_vec[1][0])]
+                triangles_result.append([triangle, affine_array, full_array])
             except:
                 print("[WARN] to_array is a singular matrix.")
+        for iter_x in range(opt_height):
+            for iter_y in range(opt_width):
+                index = in_triangle(mark_out, triangles_result, iter_x, iter_y)
+                affine_array = triangles_result[index][1]
+                full_array = triangles_result[index][2]
+                to_vec = np.array([[iter_x], [iter_y], [1]])
+                from_vec = np.dot(affine_array, to_vec)
+                if from_vec[0][0] < 0:
+                    from_vec[0][0] = 0
+                elif from_vec[0][0] >= from_height - 1:
+                    from_vec[0][0] = from_height - 1
+                else:
+                    from_vec[0][0] = int(round(from_vec[0][0]))
+                if from_vec[1][0] < 0:
+                    from_vec[1][0] = 0
+                elif from_vec[1][0] >= from_width - 1:
+                    from_vec[1][0] = from_width - 1
+                else:
+                    from_vec[1][0] = int(round(from_vec[1][0]))
+                full_vec = np.dot(full_array, to_vec)
+                if full_vec[0][0] < 0:
+                    full_vec[0][0] = 0
+                elif full_vec[0][0] >= to_height - 1:
+                    full_vec[0][0] = to_height - 1
+                else:
+                    full_vec[0][0] = int(round(full_vec[0][0]))
+                if full_vec[1][0] < 0:
+                    full_vec[1][0] = 0
+                elif full_vec[1][0] >= to_width - 1:
+                    full_vec[1][0] = to_width - 1
+                else:
+                    full_vec[1][0] = int(round(full_vec[1][0]))
+                opt_bitmap[iter_x][iter_y] = (1 - alpha) * from_bitmap[int(from_vec[0][0])][int(from_vec[1][0])] + alpha * to_bitmap[int(full_vec[0][0])][int(full_vec[1][0])]
         dst = image.fromarray(np.uint8(opt_bitmap))
         dst.save(prefix + "_" + str(num) + "_" + str(iter_n) + ".png")
 
