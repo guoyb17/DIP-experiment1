@@ -1,4 +1,5 @@
-import os, argparse, math
+import os, argparse
+from math import ceil
 from PIL import Image as image
 import numpy as np
 
@@ -57,7 +58,7 @@ def get_y_range(triangle, x):
         # assert(legal_3)
         ans_1 = min(y2, y3)
         ans_2 = max(y2, y3)
-    return (int(round(ans_1)), int(round(ans_2)))
+    return (ceil(ans_1) - 1, int(ans_2) + 1)
 
 def main(iptfrom, iptto, prefix, num):
     from_src = image.open(iptfrom).convert("RGB")
@@ -85,7 +86,17 @@ def main(iptfrom, iptto, prefix, num):
     mark_to["global_left_down"] = {"y": to_height - 1, "x": 0}
     mark_to["global_left_mid"] = {"y": to_height // 2, "x": 0}
     # assert(len(mark_from) == len(mark_to))
-    triangles = delaunay(mark_from)
+    triangles = delaunay(mark_from, from_height, from_width)
+    # mark_from["global_mid_up"] = {"y": 0, "x": from_width // 2}
+    # mark_from["global_right_mid"] = {"y": from_height // 2, "x": from_width - 1}
+    # mark_from["global_mid_down"] = {"y": from_height - 1, "x": from_width // 2}
+    # mark_from["global_left_mid"] = {"y": from_height // 2, "x": 0}
+    # mark_to["global_mid_up"] = {"y": 0, "x": to_width // 2}
+    # mark_to["global_right_mid"] = {"y": to_height // 2, "x": to_width - 1}
+    # mark_to["global_mid_down"] = {"y": to_height - 1, "x": to_width // 2}
+    # mark_to["global_left_mid"] = {"y": to_height // 2, "x": 0}
+    # print(len(triangles))
+    # print(triangles)
     for iter_n in range(num):
         alpha = (iter_n + 1) / (num + 1)
         opt_height = int(round((1 - alpha) * from_height + alpha * to_height))

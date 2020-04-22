@@ -1,4 +1,5 @@
 from math import acos, sqrt, pi
+from time import sleep
 
 
 def get_bottom_point(points):
@@ -13,8 +14,7 @@ def get_bottom_point(points):
         if points[i][1]["y"] < points[min_index][1]["y"] or (points[i][1]["y"] == points[min_index][1]["y"] and points[i][1]["x"] < points[min_index][1]["x"]):
             min_index = i
     return min_index
- 
- 
+
 def sort_polar_angle_cos(points, center_point):
     """
     按照与中心点的极角进行排序，使用的是余弦的方法
@@ -59,24 +59,6 @@ def sort_polar_angle_cos(points, center_point):
  
     return sorted_points
  
- 
-def vector_angle(vector):
-    """
-    返回一个向量与向量 [1, 0]之间的夹角， 这个夹角是指从[1, 0]沿逆时针方向旋转多少度能到达这个向量
-    :param vector:
-    :return:
-    """
-    norm_ = sqrt(vector[0] * vector[0] + vector[1] * vector[1])
-    if norm_ == 0:
-        return 0
- 
-    angle = acos(vector[0] / norm_)
-    if vector[1] >= 0:
-        return angle
-    else:
-        return 2 * pi - angle
- 
- 
 def coss_multi(v1, v2):
     """
     计算两个向量的叉乘
@@ -85,8 +67,7 @@ def coss_multi(v1, v2):
     :return:
     """
     return v1[0] * v2[1] - v1[1] * v2[0]
- 
- 
+
 def graham_scan(points):
     '''
     points: array [("position1", {"x": 123, "y": 234}), ...]
@@ -119,14 +100,14 @@ def graham_scan(points):
     stack.append(bottom_point)
     stack.append(sorted_points[0])
     stack.append(sorted_points[1])
- 
+
     for i in range(2, m):
         length = len(stack)
         top = stack[length - 1]
         next_top = stack[length - 2]
         v1 = [sorted_points[i][1]["x"] - next_top[1]["x"], sorted_points[i][1]["y"] - next_top[1]["y"]]
         v2 = [top[1]["x"] - next_top[1]["x"], top[1]["y"] - next_top[1]["y"]]
- 
+
         while coss_multi(v1, v2) >= 0:
             stack.pop()
             length = len(stack)
@@ -136,5 +117,5 @@ def graham_scan(points):
             v2 = [top[1]["x"] - next_top[1]["x"], top[1]["y"] - next_top[1]["y"]]
  
         stack.append(sorted_points[i])
- 
+
     return stack
