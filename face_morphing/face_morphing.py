@@ -60,6 +60,20 @@ def get_y_range(triangle, x):
         ans_2 = max(y2, y3)
     return (ceil(ans_1) - 1, int(ans_2) + 1)
 
+def remove_duplicate(point_set):
+    '''Remove duplicated points and store.'''
+    points = list(point_set.items())
+    pop_list = []
+    for iter_i in range(len(points)):
+        for iter_j in range(iter_i + 1, len(points)):
+            if point_set[iter_i][1]["x"] == point_set[iter_j][1]["x"] and point_set[iter_i][1]["y"] == point_set[iter_j][1]["y"]:
+                pop_list.insert(iter_j)
+    pop_list.sort(reverse=True)
+    poped_items = []
+    for pop_iter in pop_list:
+        poped_items.append(points.pop(pop_iter))
+    return (dict(poped_items), dict(points))
+
 def main(iptfrom, iptto, prefix, num):
     from_src = image.open(iptfrom).convert("RGB")
     from_width, from_height = from_src.size
@@ -86,6 +100,9 @@ def main(iptfrom, iptto, prefix, num):
     mark_to["global_left_down"] = {"y": to_height - 1, "x": 0}
     mark_to["global_left_mid"] = {"y": to_height // 2, "x": 0}
     # assert(len(mark_from) == len(mark_to))
+    (pop_from, mark_from) = remove_duplicate(mark_from)
+    for item in pop_from.keys():
+        mark_to.pop(item)
     triangles = delaunay(mark_from, from_height, from_width)
     # mark_from["global_mid_up"] = {"y": 0, "x": from_width // 2}
     # mark_from["global_right_mid"] = {"y": from_height // 2, "x": from_width - 1}

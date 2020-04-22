@@ -129,9 +129,8 @@ def in_circle(A, B, C, D):
     Judge whether D is within Circle ABC.
     '''
     sign = np.array([
-        [A["x"], A["y"], 1],
-        [B["x"], B["y"], 1],
-        [C["x"], C["y"], 1]
+        [B["x"] - A["x"], B["y"] - A["y"]],
+        [C["x"] - B["x"], C["y"] - B["y"]]
     ])
     ret = np.array([
         [A["x"], A["y"], A["x"] * A["x"] + A["y"] * A["y"], 1],
@@ -139,9 +138,9 @@ def in_circle(A, B, C, D):
         [C["x"], C["y"], C["x"] * C["x"] + C["y"] * C["y"], 1],
         [D["x"], D["y"], D["x"] * D["x"] + D["y"] * D["y"], 1]
     ])
-    # print(sign, np.linalg.det(sign))
-    # print(ret, np.linalg.det(ret))
-    return np.linalg.det(ret) * np.linalg.det(sign) < 0
+    print(sign, np.linalg.det(sign))
+    print(ret, np.linalg.det(ret))
+    return np.linalg.det(ret) * np.linalg.det(sign) > 0
 
 def zig_zag(left_set, right_set):
     '''
@@ -320,13 +319,13 @@ def merge_ans(left_ans, right_ans, from_height, from_width):
     selected = []
     selected.append(L)
     selected.append(R)
-    # print("============")
-    # print(left_ans["point_set"].keys())
-    # print(right_ans["point_set"].keys())
-    # print(left_ans["edges"])
-    # print(right_ans["edges"])
-    # print(convex_hull)
-    # print(boundary)
+    print("============")
+    print(left_ans["point_set"].keys())
+    print(right_ans["point_set"].keys())
+    print(left_ans["edges"])
+    print(right_ans["edges"])
+    print(convex_hull)
+    print(boundary)
     # if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
     #     print("============")
     #     print(left_ans["point_set"].keys())
@@ -337,8 +336,8 @@ def merge_ans(left_ans, right_ans, from_height, from_width):
     #     print(boundary)
     while L != boundary["top"][0] or R != boundary["top"][1]:
         neighbors = left_ans["edges"][L] + right_ans["edges"][R]
-        # print(L, R)
-        # print(neighbors)
+        print(L, R)
+        print(neighbors)
         # if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
         #     print(L, R)
         #     print(neighbors)
@@ -346,19 +345,19 @@ def merge_ans(left_ans, right_ans, from_height, from_width):
         for candidate in neighbors:
             if candidate in selected:
                 continue
-            # if candidate in left_ans["edges"][L] and get_degree(ans["point_set"][L], ans["point_set"][candidate], ans["point_set"][R])[0] == pi:
-            #     continue
-            # if candidate in right_ans["edges"][R] and get_degree(ans["point_set"][R], ans["point_set"][candidate], ans["point_set"][L])[0] == pi:
-            #     continue
+            if candidate in left_ans["edges"][L] and get_degree(ans["point_set"][L], ans["point_set"][candidate], ans["point_set"][R])[1] != -1:
+                continue
+            if candidate in right_ans["edges"][R] and get_degree(ans["point_set"][R], ans["point_set"][candidate], ans["point_set"][L])[1] != 1:
+                continue
             if selection == "":
                 selection = candidate
             else:
                 if in_circle(ans["point_set"][L], ans["point_set"][R], ans["point_set"][selection], ans["point_set"][candidate]):
                     selection = candidate
-                # else:
-                #     print(ans["point_set"][L], ans["point_set"][R], ans["point_set"][selection], ans["point_set"][candidate])
+                else:
+                    print(ans["point_set"][L], ans["point_set"][R], ans["point_set"][selection], ans["point_set"][candidate])
         selected.append(selection)
-        # print(selection)
+        print(selection)
         # if "global_right_down" in ans["point_set"].keys() and "global_mid_down" in ans["point_set"].keys():
         #     print(selection)
         if selection in left_ans["edges"][L]:
@@ -456,11 +455,11 @@ def merge_ans(left_ans, right_ans, from_height, from_width):
         #             L = selected_l
         #             ans["edges"][L].append(R)
         #             ans["edges"][R].append(L)
-    # print("========================")
-    # print(left_ans_backup)
-    # print(right_ans_backup)
-    # print(ans)
-    # print("========================")
+    print("========================")
+    print(left_ans_backup)
+    print(right_ans_backup)
+    print(ans)
+    print("========================")
     # if len(ans["points"]) == 4:
     #     print("========================")
     #     print(left_ans_backup)
